@@ -10,7 +10,9 @@ import (
 const fileMode = 0666
 
 var (
-	logBucket   = []byte("logBucket")
+	// logBucket is the name of bucket in boltDB used by raft.LogStore methods for storing raft logs
+	logBucket = []byte("logBucket")
+	// storeBucket is the name of bucket in boltDB used by raft.StableStore methods for storing key configurations
 	storeBucket = []byte("storeBucket")
 
 	ErrKeyNotFound = errors.New("key not found")
@@ -18,15 +20,23 @@ var (
 )
 
 type Options struct {
-	Path        string
+	// Path is the file path to the boltDB to use
+	Path string
+
 	BoltOptions *bbolt.Options
-	NoSync      bool
+
+	// NoSync causes the database to skip fsync calls after each
+	// write to the log.
+	NoSync bool
 }
 
 func (o *Options) readOnly() bool {
 	return o != nil && o.BoltOptions != nil && o.BoltOptions.ReadOnly
 }
 
+// BoltStore wraps boltdb and implements the interfaces
+// raft.LogStore to store raft logs and
+// raft.StableStore for key/value storage. The interfaces are defined in hashicorp/raft library
 type BoltStore struct {
 	db   *bbolt.DB
 	path string
@@ -59,6 +69,7 @@ func New(options Options) (*BoltStore, error) {
 	return store, nil
 }
 
+// initialize creates logBucket and storeBucket in boltDB
 func (b *BoltStore) initialize() error {
 	tx, err := b.db.Begin(true)
 	if err != nil {
@@ -79,10 +90,12 @@ func (b *BoltStore) initialize() error {
 	return tx.Commit()
 }
 
+// Close the BoltStore db
 func (b *BoltStore) Close() error {
 	return b.db.Close()
 }
 
+// logCount returns the number of raft logs present in logBucket of boltDB
 func (b *BoltStore) logCount() (int, error) {
 	tx, err := b.db.Begin(false)
 	if err != nil {
@@ -95,6 +108,7 @@ func (b *BoltStore) logCount() (int, error) {
 
 // -------------Implement raft.LogStore interface-----------------------//
 
+// FirstIndex returns the first index of raft logs written. 0 for no entries.
 func (b *BoltStore) FirstIndex() (uint64, error) {
 	tx, err := b.db.Begin(false)
 	if err != nil {
@@ -111,6 +125,7 @@ func (b *BoltStore) FirstIndex() (uint64, error) {
 	return bytesToUint64(first), nil
 }
 
+// LastIndex returns the last index of raft logs written. 0 for no entries.
 func (b *BoltStore) LastIndex() (uint64, error) {
 	tx, err := b.db.Begin(false)
 	if err != nil {
@@ -127,6 +142,7 @@ func (b *BoltStore) LastIndex() (uint64, error) {
 	return bytesToUint64(last), nil
 }
 
+// GetLog gets a log entry at a given index.
 func (b *BoltStore) GetLog(idx uint64, log *raft.Log) error {
 	tx, err := b.db.Begin(false)
 	if err != nil {
@@ -143,10 +159,12 @@ func (b *BoltStore) GetLog(idx uint64, log *raft.Log) error {
 	return convertBytesToLog(val, log)
 }
 
+// StoreLog stores a log entry.
 func (b *BoltStore) StoreLog(log *raft.Log) error {
 	return b.StoreLogs([]*raft.Log{log})
 }
 
+// StoreLogs stores multiple log entries.
 func (b *BoltStore) StoreLogs(logs []*raft.Log) error {
 	tx, err := b.db.Begin(true)
 	if err != nil {
@@ -167,6 +185,7 @@ func (b *BoltStore) StoreLogs(logs []*raft.Log) error {
 	return tx.Commit()
 }
 
+// DeleteRange deletes a range of log entries. The range is inclusive.
 func (b *BoltStore) DeleteRange(min, max uint64) error {
 	tx, err := b.db.Begin(true)
 	if err != nil {
@@ -189,7 +208,7 @@ func (b *BoltStore) DeleteRange(min, max uint64) error {
 	return tx.Commit()
 }
 
-//--------------------------------------------------------------------------//
+// -------------End raft.LogStore interface implementation-----------------------//
 
 // -------------Implement raft.StableStore interface-----------------------//
 
@@ -236,31 +255,22 @@ func (b *BoltStore) GetUint64(key []byte) (uint64, error) {
 	return bytesToUint64(val), nil
 }
 
-//--------------------------------------------------------------------------//
+// -------------End raft.StableStore interface implementation-----------------------//
 
+// Sync executes fdatasync() against the database file handle.
+//
+// This is not necessary under normal operation, however, if you use NoSync
+// then it allows you to force the database file to sync against the disk.
 func (b *BoltStore) Sync() error {
 	return b.db.Sync()
 }
 
-func convertBytesToLog(buf []byte, log *raft.Log) error {
-	if len(buf) < 25 {
-		return ErrCorrupt
-	}
-
-	log.Index = binary.BigEndian.Uint64(buf[0:8])
-	log.Term = binary.BigEndian.Uint64(buf[8:16])
-	log.Type = raft.LogType(buf[16])
-	dataLen := binary.BigEndian.Uint64(buf[17:25])
-
-	log.Data = make([]byte, dataLen)
-	if len(buf[25:]) < len(log.Data) {
-		return ErrCorrupt
-	}
-	copy(log.Data, buf[25:])
-
-	return nil
-}
-
+// convertLogToBytes converts raft.Log to bytes as follows
+// first 8 bytes - log.Index
+// next 8 bytes - log.Term
+// next 1 byte - log.Type
+// next 8 bytes - len(log.Data)
+// next len(log.Data) bytes - log.Data
 func convertLogToBytes(log *raft.Log) []byte {
 	buf := make([]byte, 0)
 	var num [8]byte
@@ -278,6 +288,27 @@ func convertLogToBytes(log *raft.Log) []byte {
 
 	buf = append(buf, log.Data...)
 	return buf
+}
+
+// convertBytesToLog converts the given bytes to raft.Log
+// see convertLogToBytes doc to check how the raft.Log fields map to bytes
+func convertBytesToLog(buf []byte, log *raft.Log) error {
+	if len(buf) < 25 {
+		return ErrCorrupt
+	}
+
+	log.Index = binary.BigEndian.Uint64(buf[0:8])
+	log.Term = binary.BigEndian.Uint64(buf[8:16])
+	log.Type = raft.LogType(buf[16])
+	dataLen := binary.BigEndian.Uint64(buf[17:25])
+
+	log.Data = make([]byte, dataLen)
+	if len(buf[25:]) < len(log.Data) {
+		return ErrCorrupt
+	}
+	copy(log.Data, buf[25:])
+
+	return nil
 }
 
 func bytesToUint64(b []byte) uint64 {

@@ -10,12 +10,12 @@ import (
 )
 
 func testBoltStore(t testing.TB) *BoltStore {
-	fh, err := os.CreateTemp("", "bolt")
+	file, err := os.CreateTemp("", "bolt")
 	assert.NoError(t, err)
-	os.Remove(fh.Name())
+	os.Remove(file.Name())
 
 	// Successfully creates and returns a store
-	store, err := NewBoltStore(fh.Name())
+	store, err := NewBoltStore(file.Name())
 	assert.NoError(t, err)
 
 	return store
