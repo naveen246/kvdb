@@ -40,7 +40,7 @@ func Test_StoreOpenSingleNode(t *testing.T) {
 	// Simple way to ensure there is a leader.
 	time.Sleep(2 * time.Second)
 
-	assert.Equal(t, "data/"+s.RaftAddr, s.dataDir())
+	assert.Equal(t, "data/"+s.RaftAddr, s.DataDir(s.RaftAddr))
 
 	err = s.Set("foo", "bar")
 	assert.NoError(t, err, "failed to set key")

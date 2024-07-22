@@ -134,6 +134,6 @@ func (s *Store) Keys() []string {
 	return maps.Keys(s.kv)
 }
 
-func (s *Store) dataDir() string {
-	return filepath.Join("data", s.RaftAddr)
+func (s *Store) DataDir(raftAddr string) string {
+	return filepath.Join("data", raftAddr)
 }
