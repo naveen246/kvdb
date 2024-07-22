@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/raft"
-	"io"
+	"golang.org/x/exp/maps"
 	"log"
 	"net"
 	"os"
@@ -87,10 +87,10 @@ func (s *Store) Open(bootstrapCluster bool, localID string) error {
 	return nil
 }
 
-func (s *Store) Get(key string) (string, error) {
+func (s *Store) Get(key string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.kv[key], nil
+	return s.kv[key]
 }
 
 func (s *Store) Set(key string, value string) error {
@@ -128,122 +128,8 @@ func (s *Store) Delete(key string) error {
 	return f.Error()
 }
 
-func (s *Store) Join(nodeID, addr string) error {
-	s.logger.Printf("received join request for remote node %s at %s", nodeID, addr)
-
-	configFuture := s.raft.GetConfiguration()
-	if err := configFuture.Error(); err != nil {
-		s.logger.Printf("failed to get raft configuration: %v", err)
-		return err
-	}
-
-	servers := configFuture.Configuration().Servers
-	for _, server := range servers {
-		alreadyJoined := server.ID == raft.ServerID(nodeID) && server.Address == raft.ServerAddress(addr)
-		if alreadyJoined {
-			s.logger.Printf("node %s at %s already member of cluster, ignoring join request", nodeID, addr)
-			return nil
-		}
-
-		belongsToCluster := server.ID == raft.ServerID(nodeID) || server.Address == raft.ServerAddress(addr)
-		if belongsToCluster {
-			f := s.raft.RemoveServer(server.ID, 0, 0)
-			if f.Error() != nil {
-				return fmt.Errorf("error removing existing node %s at %s", nodeID, addr)
-			}
-		}
-	}
-
-	f := s.raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(addr), 0, 0)
-	if f.Error() != nil {
-		return f.Error()
-	}
-
-	s.logger.Printf("node %s at %s joined successfully", nodeID, addr)
-	return nil
+func (s *Store) Keys() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return maps.Keys(s.kv)
 }
-
-type fsm Store
-
-func (f *fsm) Apply(l *raft.Log) interface{} {
-	var c command
-	err := json.Unmarshal(l.Data, &c)
-	if err != nil {
-		log.Panicf("failed to unmarshal command: %s", err.Error())
-	}
-
-	switch c.Op {
-	case CmdSet:
-		return f.applySet(c.Key, c.Value)
-	case CmdDelete:
-		return f.applyDelete(c.Key)
-	default:
-		log.Panicf("unrecognized command op: %s", c.Op)
-	}
-
-	return nil
-}
-
-func (f *fsm) Snapshot() (raft.FSMSnapshot, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	snapStore := make(map[string]string)
-	for k, v := range f.kv {
-		snapStore[k] = v
-	}
-	return &fsmSnapshot{snapStore}, nil
-}
-
-func (f *fsm) Restore(snapshot io.ReadCloser) error {
-	snapStore := make(map[string]string)
-	err := json.NewDecoder(snapshot).Decode(&snapStore)
-	if err != nil {
-		return err
-	}
-
-	f.kv = snapStore
-	return nil
-}
-
-func (f *fsm) applySet(key, value string) interface{} {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.kv[key] = value
-	return nil
-}
-
-func (f *fsm) applyDelete(key string) interface{} {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	delete(f.kv, key)
-	return nil
-}
-
-type fsmSnapshot struct {
-	store map[string]string
-}
-
-func (s *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
-	err := func() error {
-		bytes, err := json.Marshal(s.store)
-		if err != nil {
-			return err
-		}
-
-		_, err = sink.Write(bytes)
-		if err != nil {
-			return err
-		}
-
-		return sink.Close()
-	}()
-
-	if err != nil {
-		sink.Cancel()
-	}
-
-	return err
-}
-
-func (s *fsmSnapshot) Release() {}

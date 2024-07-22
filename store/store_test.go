@@ -3,6 +3,7 @@ package store
 import (
 	"github.com/stretchr/testify/assert"
 	"os"
+	"slices"
 	"testing"
 	"time"
 )
@@ -40,10 +41,18 @@ func Test_StoreOpenSingleNode(t *testing.T) {
 	err = s.Set("foo", "bar")
 	assert.NoError(t, err, "failed to set key")
 
+	err = s.Set("far", "baz")
+	assert.NoError(t, err, "failed to set key")
+
 	// Wait for committed log entry to be applied.
 	time.Sleep(500 * time.Millisecond)
-	value, err := s.Get("foo")
-	assert.NoError(t, err, "failed to get key")
+
+	keys := s.Keys()
+	assert.Equal(t, 2, len(keys))
+	assert.True(t, slices.Contains(keys, "foo"))
+	assert.True(t, slices.Contains(keys, "far"))
+
+	value := s.Get("foo")
 	assert.Equal(t, "bar", value, "key has wrong value")
 
 	err = s.Delete("foo")
@@ -51,7 +60,6 @@ func Test_StoreOpenSingleNode(t *testing.T) {
 
 	// Wait for committed log entry to be applied.
 	time.Sleep(500 * time.Millisecond)
-	value, err = s.Get("foo")
-	assert.NoError(t, err, "failed to get key")
+	value = s.Get("foo")
 	assert.Empty(t, value, "key has wrong value")
 }
