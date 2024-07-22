@@ -3,6 +3,7 @@ module github.com/naveen246/kvdb
 go 1.22.5
 
 require (
+	github.com/go-resty/resty/v2 v2.13.1
 	github.com/hashicorp/raft v1.7.0
 	github.com/stretchr/testify v1.9.0
 	go.etcd.io/bbolt v1.3.10
@@ -13,7 +14,6 @@ require (
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
-	github.com/go-resty/resty/v2 v2.13.1 // indirect
 	github.com/hashicorp/go-hclog v1.6.2 // indirect
 	github.com/hashicorp/go-immutable-radix v1.0.0 // indirect
 	github.com/hashicorp/go-msgpack/v2 v2.1.1 // indirect
