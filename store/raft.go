@@ -5,26 +5,25 @@ import (
 	"github.com/hashicorp/raft"
 )
 
-func (s *Store) Join(nodeID, addr string) error {
-	s.logger.Printf("received join request for remote node %s at %s", nodeID, addr)
+// AddNode adds a new node to raft cluster. This should be called from the leader node
+func (s *Store) AddNode(nodeID, addr string) error {
+	s.logger.Printf("received add request for remote node %s at %s", nodeID, addr)
 
-	configFuture := s.raft.GetConfiguration()
-	if err := configFuture.Error(); err != nil {
-		s.logger.Printf("failed to get raft configuration: %v", err)
+	nodes, err := s.NodeList()
+	if err != nil {
 		return err
 	}
 
-	servers := configFuture.Configuration().Servers
-	for _, server := range servers {
-		alreadyJoined := server.ID == raft.ServerID(nodeID) && server.Address == raft.ServerAddress(addr)
+	for _, node := range nodes {
+		alreadyJoined := node.ID == raft.ServerID(nodeID) && node.Address == raft.ServerAddress(addr)
 		if alreadyJoined {
-			s.logger.Printf("node %s at %s already member of cluster, ignoring join request", nodeID, addr)
+			s.logger.Printf("node %s at %s already member of cluster, ignoring add request", nodeID, addr)
 			return nil
 		}
 
-		belongsToCluster := server.ID == raft.ServerID(nodeID) || server.Address == raft.ServerAddress(addr)
+		belongsToCluster := node.ID == raft.ServerID(nodeID) || node.Address == raft.ServerAddress(addr)
 		if belongsToCluster {
-			f := s.raft.RemoveServer(server.ID, 0, 0)
+			f := s.raft.RemoveServer(node.ID, 0, 0)
 			if f.Error() != nil {
 				return fmt.Errorf("error removing existing node %s at %s", nodeID, addr)
 			}
@@ -38,4 +37,27 @@ func (s *Store) Join(nodeID, addr string) error {
 
 	s.logger.Printf("node %s at %s joined successfully", nodeID, addr)
 	return nil
+}
+
+func (s *Store) Leader() raft.Server {
+	nodeAddr, nodeID := s.raft.LeaderWithID()
+	return raft.Server{
+		ID:      nodeID,
+		Address: nodeAddr,
+	}
+}
+
+func (s *Store) NodeList() ([]raft.Server, error) {
+	configFuture := s.raft.GetConfiguration()
+	if err := configFuture.Error(); err != nil {
+		s.logger.Printf("failed to get raft configuration: %v", err)
+		return nil, err
+	}
+
+	return configFuture.Configuration().Servers, nil
+}
+
+func (s *Store) Snapshot() error {
+	f := s.raft.Snapshot()
+	return f.Error()
 }
