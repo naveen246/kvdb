@@ -8,15 +8,17 @@ import (
 	"time"
 )
 
+const testDir = "test"
+
 // Test_StoreOpen tests that the store can be opened.
 func Test_StoreOpen(t *testing.T) {
 	s := NewStore()
-	tmpDir, _ := os.MkdirTemp("", "store_test")
-	defer os.RemoveAll(tmpDir)
+	os.Mkdir(testDir, os.ModePerm)
+	defer os.RemoveAll(testDir)
 
 	assert.NotNil(t, s, "failed to create store")
 	s.RaftAddr = "127.0.0.1:0"
-	s.RaftDir = tmpDir
+	s.RaftDir = testDir
 
 	err := s.Open(false, "node0")
 	assert.NoError(t, err, "failed to open store")
@@ -25,12 +27,12 @@ func Test_StoreOpen(t *testing.T) {
 // Test_StoreOpenSingleNode tests that a command can be applied to the log
 func Test_StoreOpenSingleNode(t *testing.T) {
 	s := NewStore()
-	tmpDir, _ := os.MkdirTemp("", "store_test")
-	defer os.RemoveAll(tmpDir)
+	os.Mkdir(testDir, os.ModePerm)
+	defer os.RemoveAll(testDir)
 
 	assert.NotNil(t, s, "failed to create store")
 	s.RaftAddr = "127.0.0.1:0"
-	s.RaftDir = tmpDir
+	s.RaftDir = testDir
 
 	err := s.Open(true, "node0")
 	assert.NoError(t, err, "failed to open store")

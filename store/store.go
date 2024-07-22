@@ -133,3 +133,7 @@ func (s *Store) Keys() []string {
 	defer s.mu.Unlock()
 	return maps.Keys(s.kv)
 }
+
+func (s *Store) dataDir() string {
+	return filepath.Join("data", s.RaftAddr)
+}

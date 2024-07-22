@@ -25,4 +25,6 @@ go.work.sum
 *.env
 .idea/
 bin/
+data/
+test/
 .DS_Store

@@ -10,12 +10,12 @@ import (
 
 func Test_StoreJoin(t *testing.T) {
 	s := NewStore()
-	tmpDir, _ := os.MkdirTemp("", "store_test")
-	defer os.RemoveAll(tmpDir)
+	os.Mkdir(testDir, os.ModePerm)
+	defer os.RemoveAll(testDir)
 
 	assert.NotNil(t, s, "failed to create store")
 	s.RaftAddr = "127.0.0.1:0"
-	s.RaftDir = tmpDir
+	s.RaftDir = testDir
 
 	err := s.Open(true, "node0")
 	assert.NoError(t, err, "failed to open store")
