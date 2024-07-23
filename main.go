@@ -47,7 +47,7 @@ func main() {
 
 	err := stor.Open(joinAddr == "", nodeID)
 	if err != nil {
-		log.Fatalf("failed to open stor: %s", err.Error())
+		log.Fatalf("failed to open store: %s", err.Error())
 	}
 
 	service.New(httpAddr, stor, stor).Start()

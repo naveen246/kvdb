@@ -13,7 +13,7 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 	var c command
 	err := json.Unmarshal(l.Data, &c)
 	if err != nil {
-		log.Panicf("failed to unmarshal command: %s", err.Error())
+		log.Fatalf("failed to unmarshal command: %s", err.Error())
 	}
 
 	switch c.Op {
@@ -22,7 +22,7 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 	case CmdDelete:
 		return f.applyDelete(c.Key)
 	default:
-		log.Panicf("unrecognized command op: %s", c.Op)
+		log.Fatalf("unrecognized command op: %s", c.Op)
 	}
 
 	return nil
