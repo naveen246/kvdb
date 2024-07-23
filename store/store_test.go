@@ -20,7 +20,7 @@ func Test_StoreOpen(t *testing.T) {
 	s.RaftAddr = "127.0.0.1:0"
 	s.RaftDir = testDir
 
-	err := s.Open(false, "node0")
+	err := s.Open(false, "node1")
 	assert.NoError(t, err, "failed to open store")
 }
 
@@ -34,7 +34,7 @@ func Test_StoreOpenSingleNode(t *testing.T) {
 	s.RaftAddr = "127.0.0.1:0"
 	s.RaftDir = testDir
 
-	err := s.Open(true, "node0")
+	err := s.Open(true, "node1")
 	assert.NoError(t, err, "failed to open store")
 
 	// Simple way to ensure there is a leader.

@@ -47,20 +47,16 @@ func main() {
 
 	err := stor.Open(joinAddr == "", nodeID)
 	if err != nil {
-		log.Fatalf("failed to open stor: %stor", err.Error())
+		log.Fatalf("failed to open stor: %s", err.Error())
 	}
 
-	svc := service.New(httpAddr, stor, stor)
-	err = svc.Start()
-	if err != nil {
-		log.Fatalf("failed to start HTTP svc: %stor", err.Error())
-	}
+	service.New(httpAddr, stor, stor).Start()
 
 	// If join was specified, make the join request.
 	if joinAddr != "" {
 		err := join(joinAddr, raftAddr, nodeID)
 		if err != nil {
-			log.Fatalf("failed to join node at %stor: %stor", joinAddr, err.Error())
+			log.Fatalf("failed to join node at %s: %s", joinAddr, err.Error())
 		}
 	}
 

@@ -1,9 +1,9 @@
 package service
 
 import (
-	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/raft"
-	"net/http"
+	"log"
 )
 
 // KV is the interface RaftHandler-backed key-value stores must implement.
@@ -49,38 +49,25 @@ func New(addr string, kv KV, raftHandler RaftHandler) *Service {
 }
 
 // Start starts the service.
-func (s *Service) Start() error {
-	mux := http.NewServeMux()
+func (s *Service) Start() {
+	router := gin.Default()
 
-	// curl -X POST localhost:11001/keys/ -d '{"k":"abc", "v":"123"}'
-	mux.HandleFunc("POST /keys/", s.SetKey)
+	// curl -X POST localhost:11001/keys -d '{"abc":"122"}'
+	router.POST("/keys", s.SetKey)
 
-	// curl localhost:11001/keys/abc/
-	mux.HandleFunc("GET /keys/{key}/", s.GetKey)
+	// curl http://localhost:11001/keys
+	router.GET("/keys", s.GetKeys)
 
-	// curl -X DELETE localhost:11001/keys/abc/
-	mux.HandleFunc("DELETE /keys/{key}/", s.DeleteKey)
+	// curl http://localhost:11001/keys/abc
+	router.GET("/keys/:key", s.GetKey)
 
-	// curl http://localhost:11001/keys/
-	mux.HandleFunc("GET /keys/", s.GetKeys)
+	// curl -X DELETE localhost:11001/keys/abc
+	router.DELETE("/keys/:key", s.DeleteKey)
 
-	mux.HandleFunc("GET /raft/", s.handleRaftRequest)
-
-	err := http.ListenAndServe(s.addr, mux)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// renderJSON renders 'v' as JSON and writes it as a response into w.
-func (s *Service) renderJSON(w http.ResponseWriter, v any) {
-	js, err := json.Marshal(v)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+	go func() {
+		err := router.Run(s.addr)
+		if err != nil {
+			log.Fatalf("HTTP serve: %s", err)
+		}
+	}()
 }
