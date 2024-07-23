@@ -77,40 +77,35 @@ func (t *testStore) Delete(key string) error {
 }
 
 func getKey(t *testing.T, url, key string) string {
-	client := resty.New()
-	resp, err := client.R().
+	resp, err := resty.New().R().
 		Get(fmt.Sprintf("%s/keys/%s", url, key))
-	assert.NoError(t, err, "failed to GET key")
 
+	assert.NoError(t, err, "failed to GET key")
 	return string(resp.Body())
 }
 
 func setKey(t *testing.T, url, key, value string) string {
-	client := resty.New()
-	resp, err := client.R().
+	resp, err := resty.New().R().
 		SetBody(map[string]string{key: value}).
 		Post(fmt.Sprintf("%s/keys", url))
 
 	assert.NoError(t, err, "POST request failed")
-
 	return resp.String()
 }
 
 func deleteKey(t *testing.T, url, key string) string {
-	client := resty.New()
-	resp, err := client.R().
+	resp, err := resty.New().R().
 		SetHeader("Accept", "application/json").
 		Delete(fmt.Sprintf("%s/keys/%s", url, key))
-	assert.NoError(t, err, "failed to Delete key")
 
+	assert.NoError(t, err, "failed to Delete key")
 	return string(resp.Body())
 }
 
 func getKeys(t *testing.T, url string) string {
-	client := resty.New()
-	resp, err := client.R().
+	resp, err := resty.New().R().
 		Get(fmt.Sprintf("%s/keys", url))
-	assert.NoError(t, err, "failed to Get keys")
 
+	assert.NoError(t, err, "failed to Get keys")
 	return resp.String()
 }

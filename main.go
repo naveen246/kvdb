@@ -69,10 +69,10 @@ func main() {
 }
 
 func join(joinAddr, raftAddr, nodeID string) error {
-	url := fmt.Sprintf("http://%s/raft", joinAddr)
+	url := fmt.Sprintf("http://%s/raft/join", joinAddr)
 
 	_, err := resty.New().R().
-		SetBody(map[string]string{"addr": raftAddr, "id": nodeID}).
+		SetBody(map[string]string{"addr": raftAddr, "nodeID": nodeID}).
 		Post(url)
 	if err != nil {
 		return err

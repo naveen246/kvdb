@@ -55,14 +55,16 @@ func (s *Service) Start() {
 	// curl -X POST localhost:11001/keys -d '{"abc":"122"}'
 	router.POST("/keys", s.SetKey)
 
-	// curl http://localhost:11001/keys
+	// curl localhost:11001/keys
 	router.GET("/keys", s.GetKeys)
 
-	// curl http://localhost:11001/keys/abc
+	// curl localhost:11001/keys/abc
 	router.GET("/keys/:key", s.GetKey)
 
 	// curl -X DELETE localhost:11001/keys/abc
 	router.DELETE("/keys/:key", s.DeleteKey)
+
+	router.POST("/raft", s.handleRaftRequest)
 
 	go func() {
 		err := router.Run(s.addr)
