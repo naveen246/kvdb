@@ -6,8 +6,11 @@ import (
 )
 
 func (s *Service) handleRaftRequest(c *gin.Context) {
-	nodeID := c.Param("nodeID")
-	addr := c.Param("addr")
-	s.raftHandler.AddNode(nodeID, addr)
-	c.String(http.StatusOK, "Node added")
+	var node = struct {
+		NodeID string `json:"nodeID"`
+		Addr   string `json:"addr"`
+	}{}
+	c.BindJSON(&node)
+	s.raftHandler.AddNode(node.NodeID, node.Addr)
+	c.String(http.StatusOK, "Node added %s - %s", node.NodeID, node.Addr)
 }

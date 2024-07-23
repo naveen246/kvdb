@@ -64,7 +64,8 @@ func (s *Service) Start() {
 	// curl -X DELETE localhost:11001/keys/abc
 	router.DELETE("/keys/:key", s.DeleteKey)
 
-	router.POST("/raft", s.handleRaftRequest)
+	// curl -X POST localhost:11001/raft/join -d '{ "addr": "localhost:12002", "nodeID": "node2" }'
+	router.POST("/raft/join", s.handleRaftRequest)
 
 	go func() {
 		err := router.Run(s.addr)
