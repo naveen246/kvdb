@@ -3,6 +3,7 @@ kvdb is a distributed key-value store that uses raft for data replication and bo
 
 ---
 
+### Running kvdb
 Create executables `kvdb` and `cli` under the folder bin
 ``` 
 make build
