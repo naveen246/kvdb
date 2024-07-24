@@ -6,7 +6,8 @@ vet:
 
 .PHONY: build
 build: fmt vet
-	go build -v -o bin/kvdb ./
+	go build -v -o bin/kvdb ./cmd
+	go build -v -o bin/cli ./cli
 
 test: build
 	go test -count=1 -cover -race ./...
