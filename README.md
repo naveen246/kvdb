@@ -1,7 +1,7 @@
 ## kvdb
 
 Create executables
-```
+``` 
 make build
 ``` 
 
@@ -18,28 +18,53 @@ In another terminal, run the cli
 ``` 
 
 ### From the cli
+
+Find leader node (from any node)
+```
+raft leader addr=localhost:11001
+ 
+```
+
+Get raft servers (from any node)
+```
+raft servers addr=localhost:11001
+ 
+```
+
 Set a key (only from leader node)
 ```
-> kv set k1=v1 addr=localhost:11001
+kv set k1=v1 addr=localhost:11001
+result: {"k1":"v1"}
 ``` 
 
 Get list of keys (from any node)
 ```
-> kv list keys addr=localhost:11001
-> kv list keys addr=localhost:11002
-> kv list keys addr=localhost:11003
+kv list keys addr=localhost:11001
+result: ["k1"]
+
+kv list keys addr=localhost:11002
+result: ["k1"]
+
+kv list keys addr=localhost:11003
+result: ["k1"]
 ``` 
 
 Get value for a key (from any node)
 ```
-> kv get k1 addr=localhost:11001
-> kv get k1 addr=localhost:11002
-> kv get k1 addr=localhost:11003
+kv get k1 addr=localhost:11001
+result: {"k1":"v1"}
+
+kv get k1 addr=localhost:11002
+result: {"k1":"v1"}
+
+kv get k1 addr=localhost:11003
+result: {"k1":"v1"}
 ``` 
 
 Delete a key (only from leader node)
 ```
-> kv delete k1 addr=localhost:11001
+kv delete k1 addr=localhost:11001
+result: k1
 ``` 
 
 Exit CLI
