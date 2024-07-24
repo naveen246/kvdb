@@ -1,6 +1,8 @@
 ## kvdb
 kvdb is a distributed key-value store that uses raft for data replication and boltdb for raft log storage
 
+---
+
 Create executables `kvdb` and `cli` under the folder bin
 ``` 
 make build
@@ -9,9 +11,11 @@ make build
 Create raft cluster.
 ```shell
 ./bin/kvdb -id=node1 -httpaddr=localhost:11001 -raftaddr=localhost:12001
-
+```
+```shell
 ./bin/kvdb -id=node2 -httpaddr=localhost:11002 -raftaddr=localhost:12002 -join=localhost:11001
-
+```
+```shell
 ./bin/kvdb -id=node3 -httpaddr=localhost:11003 -raftaddr=localhost:12003 -join=localhost:11001
 ```  
 
