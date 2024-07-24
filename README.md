@@ -22,13 +22,13 @@ In another terminal, run the cli
 Find leader node (from any node)
 ```
 raft leader addr=localhost:11001
- 
+result: {"NodeID":"node1","RaftAddr":"127.0.0.1:12001"}
 ```
 
 Get raft servers (from any node)
 ```
 raft servers addr=localhost:11001
- 
+result: [{"NodeID":"node1","RaftAddr":"127.0.0.1:12001"},{"NodeID":"node2","RaftAddr":"localhost:12002"},{"NodeID":"node3","RaftAddr":"localhost:12003"}]
 ```
 
 Set a key (only from leader node)

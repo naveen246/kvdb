@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/hashicorp/raft"
+	"github.com/naveen246/kvdb/store"
 	"log"
 	"net/http"
 )
@@ -26,9 +26,9 @@ type RaftHandler interface {
 	// AddNode adds the node, identified by nodeID and reachable at addr, to the cluster.
 	AddNode(nodeID string, addr string) error
 
-	Leader() raft.Server
+	Leader() store.Node
 
-	NodeList() ([]raft.Server, error)
+	NodeList() ([]store.Node, error)
 
 	Snapshot() error
 }
